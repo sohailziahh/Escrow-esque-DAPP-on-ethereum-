@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="custom.css">
+    <title>Our little escrow Dapp</title>
+  </head>
+  <body>
+    <h1>Welcome to escrow dapp.</h1>
+
+    <h2>Send money through contract:</h2>
+    <form id="contract-form">
+      <div class="form-group">
+        <label for="Sender Address">Sender ETH Address</label>
+        <input value="" type="text" class="form-control" id="fromAddress" aria-describedby="fromAddressHelp" placeholder="Enter your address" required="true">
+        <small id="fromAddressHelp" class="form-text text-muted">Enter your wallet address. Note: you will need to approve this with your private key.</small>
+      </div>
+        <div class="form-group">
+          <label for="Receiver Address">Receiver ETH Address</label>
+          <input value="0x2932b7A2355D6fecc4b5c0B6BD44cC31df247a2e" type="text" class="form-control" id="toAddress" aria-describedby="toAddressHelp" placeholder="Enter the receipient address" required="true">
+          <small id="toAddressHelp" class="form-text text-muted">Enter the wallet address of the recipient.</small>
+        </div>
+          <div class="form-group">
+            <label for="Amount">Amount</label>
+            <input value="2" type="text" class="form-control" id="amount" aria-describedby="amountHelp" placeholder="Amount to send in ETH" required="true">
+            <small id="amountHelp" class="form-text text-muted">How much you want to send in ETH.</small>
+          </div>
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <div id="deposit-result">Click the Submit button to deposit your ETH to the contract.</div>
+    </form>
+    <hr>
+    <h2>Balance:</h2>
+    <form id="get-balance-form">
+      <button type="submit" class="btn btn-primary">Get Balance</button>
+      <div id="the-balance">Click Button to get the current contract balance.</div>
+    </form>
+    <h2>Approver:</h2>
+    <form id="approver-form">
+      <button type="submit" class="btn btn-primary">Get Approver</button>
+      <div id="approver-display">Click Button to get the address of the approver.</div>
+    </form>
+
+    <form id="approve-form">
+      <button type="submit" class="btn btn-primary">Approve Transaction</button>
+      <div id="approval-display">Click the button to approve the transaction.</div>
+    </form>
+
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="web3.min.js"></script>
+    <script src="contractAbi.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+
+    <script>
+
+      // change this to the ACTUAL contract address that you created on truffle migrate
+      var contractAddress = "0x2c2b9c9a4a25e24b174f26114e8926a9f2128fe4";
+      if ( typeof web3 != 'undefined' ) {
+        web3 = new Web3(web3.currentProvider);
+        $('#fromAddress').val('0xf17f52151EbEF6C7334FAD080c5704D77216b732');
+      } else { // set the provider you want from Web3.providers
+        web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:9545"));
+        //web3.setProvider(new web3.providers.HttpProvider("http://localhost:9545"));
+        $('#fromAddress').val(web.eth.accounts[0]);
+      }
+      //var Web3 = require('web3');
+      //var web3 = new Web3();
+
+      var version = web3.version;
+      console.log("Using web3 version: " + version);
+
+
+
+      var ApprovalContract = new web3.eth.Contract(abi,contractAddress);
+
+      // script to show the contract
+      console.log(ApprovalContract);
+
+      //make sure that addresses are legit
+      $('#contract-form').submit(function() {
+        event.preventDefault();
+        var fromAddress = $('#fromAddress').val();
+        var toAddress = $('#toAddress').val();
+        var amount = $('#amount').val();
+        if (web3.utils.isAddress(fromAddress) != true) {
+          alert('You did not enter a correct ethereum address for the sender address.');
+          return;
+        }
+        if (web3.utils.isAddress(toAddress) != true) {
+          alert('You did not enter a correct ethereum address for the recipient address.');
+          return;
+         }
+        // make sure the ETH is > 0
+        if (amount == 0){
+          alert('You must send more than 0 ETH');
+          return;
+         }
+      // all is good, let's call our contract deposit
+      ApprovalContract.methods.deposit(toAddress).send({from: fromAddress, gas: 100000, value:  web3.utils.toWei(amount, 'ether')},
+          function(error, result) {
+            if (error) {
+              console.log('error: ' + error);
+              $('#deposit-result').html('<b>Error: </b>' + error);
+            }
+            else {
+            $('#deposit-result').html('Success TX: <b>' + result + '</b>');
+            }
+          });
+    });
+
+
+    $('#get-balance-form').submit(function() {
+      event.preventDefault();
+
+    web3.eth.getBalance(contractAddress,
+          function(error, result) {
+            if (error) {
+              console.log('error: ' + error);
+            }
+            else {
+              console.log('balance: ' + result);
+              $('#the-balance').html('<b>Current Balance: </b>' + web3.utils.fromWei(result));
+            }
+          });
+        });
+
+  //  });
+        $('#approve-form').submit(function() {
+          event.preventDefault();
+
+          ApprovalContract.methods.approve().call({from: '0xC5fdf4076b8F3A5357c5E395ab970B5B54098Fef', gas: 100000},
+              function(error, result) {
+                if (error) {
+                  console.log('error: ' + error);
+                }
+                else {
+                  console.log('result: ' + JSON.stringify(result));
+                  $('#approval-display').html('Transaction Approved. TX: <b>' + result + '</b>');
+                }
+              });
+        });
+        $('#approver-form').submit(function() {
+          event.preventDefault();
+
+          ApprovalContract.methods.viewApprover().call(
+              function(error, result) {
+                if (error) {
+                  console.log('error: ' + error);
+                }
+                else {
+                  console.log('result: ' + JSON.stringify(result));
+                  $('#approver-display').html('Approver Address: <b>' + result + '</b>');
+                }
+              });
+        });
+    </script>
+
+
+    </body>
+</html>
